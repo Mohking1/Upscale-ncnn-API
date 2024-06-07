@@ -1,5 +1,4 @@
 const express = require('express');
-const fs = require('fs');
 const bodyParser = require('body-parser');
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
@@ -13,17 +12,6 @@ const requestIp = require('request-ip');
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Set up storage engine with multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${uuidv4()}${path.extname(file.originalname)}`);
-  }
-});
-const upload = multer({ storage });
 
 const supabaseUrl = 'https://hsnaumiotmaozcqyeggc.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbmF1bWlvdG1hb3pjcXllZ2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNzU3OTc4MywiZXhwIjoyMDMzMTU1NzgzfQ.jrh-z6xSiVELtJKGZH2WhEoAhPpzYvBhmnmfcNllSNY';
@@ -45,6 +33,18 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Set up storage engine with multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const requestId = uuidv4();
+    cb(null, `${requestId}${path.extname(file.originalname)}`);
+  }
+});
+const upload = multer({ storage });
+
 // Endpoint to handle image upload
 app.post('/upload', upload.single('image'), async (req, res) => {
   const { model_name, scale } = req.body;
@@ -57,18 +57,18 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 
   try {
-    const requestId = uuidv4();
+    const requestId = path.basename(req.file.path, path.extname(req.file.path));
 
     const { data, error } = await supabase
       .from('requests')
-      .insert([{ 
-        request_id: requestId, 
-        model_name, 
-        height, 
-        width, 
-        scale, 
-        current_status: 0, 
-        image_path: imagePath 
+      .insert([{
+        request_id: requestId,
+        model_name,
+        height,
+        width,
+        scale,
+        current_status: 0,
+        image_path: imagePath
       }]);
 
     if (error) throw error;
@@ -83,15 +83,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 });
 
-const updateStatus = async (requestId, status, progressPercentage) => {
-  const { error } = await supabase
-    .from('requests')
-    .update({ current_status: status, current_progress: progressPercentage })
-    .eq('request_id', requestId);
-
-  if (error) console.error('Error updating status:', error);
-};
-
 app.get('/upscaled/:requestId', async (req, res) => {
   const { requestId } = req.params;
   sendImage(requestId, res);
@@ -101,5 +92,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-module.exports = { updateStatus };
