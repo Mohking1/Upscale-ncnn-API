@@ -13,4 +13,3 @@ const updateStatus = async (requestId, status, progressPercentage) => {
     if (error) console.error('Error updating status:', error);
   };
   module.exports = { updateStatus };
-  console.log('Exporting updateStatus:', updateStatus);

@@ -7,7 +7,7 @@ const { upscaleImage } = require('./upscale');
 const { sendImage } = require('./sendImages');
 const multer = require('multer');
 const path = require('path');
-const requestIp = require('request-ip');
+
 
 const app = express();
 app.use(bodyParser.json());
@@ -17,19 +17,6 @@ const supabaseUrl = 'https://hsnaumiotmaozcqyeggc.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbmF1bWlvdG1hb3pjcXllZ2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNzU3OTc4MywiZXhwIjoyMDMzMTU1NzgzfQ.jrh-z6xSiVELtJKGZH2WhEoAhPpzYvBhmnmfcNllSNY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-app.use((req, res, next) => {
-  const clientIp = requestIp.getClientIp(req);
-  const isLocalAddress = clientIp === '::1' || clientIp === '127.0.0.1';
-
-  if (isLocalAddress) {
-    console.log('Local client detected');
-    req.clientIp = '127.0.0.1';
-  } else {
-    console.log('Client IP:', clientIp);
-    req.clientIp = clientIp;
-  }
-  next();
-});
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
