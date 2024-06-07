@@ -7,7 +7,7 @@ const { upscaleImage } = require('./upscale');
 const { sendImage } = require('./sendImages');
 const multer = require('multer');
 const path = require('path');
-
+const { extractPNGMetadata } = require('./png-metadata');
 
 const app = express();
 
@@ -60,8 +60,9 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     upscaleImage(imagePath, requestId, model_name, height, width, res);
     subscribeToProgressUpdates(requestId, model_name, height, width, scale);
-
+    extractPNGMetadata(imagePath, requestId);
     res.status(200).send({ requestId });
+    
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).send({ error: 'Internal Server Error' });
