@@ -10,8 +10,6 @@ const path = require('path');
 
 
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 const supabaseUrl = 'https://hsnaumiotmaozcqyeggc.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbmF1bWlvdG1hb3pjcXllZ2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNzU3OTc4MywiZXhwIjoyMDMzMTU1NzgzfQ.jrh-z6xSiVELtJKGZH2WhEoAhPpzYvBhmnmfcNllSNY';
@@ -20,7 +18,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up storage engine with multer
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -32,7 +30,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Endpoint to handle image upload
+
 app.post('/upload', upload.single('image'), async (req, res) => {
   const { model_name, scale } = req.body;
   const height = req.body.height || null;
