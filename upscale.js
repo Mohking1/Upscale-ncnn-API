@@ -20,7 +20,7 @@ const upscaleImage = async (imagePath, requestId, model_name, height, width) => 
   let retries = 0;
 
   const executeCommand = () => {
-    const process = exec(command, (error, stdout, stderr) => {
+    const process = exec(command, (error, stderr) => {
       if (error) {
         console.error(`Error upscaling image: ${stderr}`);
         if (retries < 3) {
@@ -31,6 +31,7 @@ const upscaleImage = async (imagePath, requestId, model_name, height, width) => 
         }
       } else {
         updateStatus(requestId, 2, 100); // Status 2 for completed
+        
       }
     });
 

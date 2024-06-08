@@ -49,7 +49,7 @@ const downloadImage = async (imageUrl, requestId) => {
 };
 
 app.post('/upload', upload.single('image'), async (req, res) => {
-  const { model_name, scale, imageUrl } = req.body;
+  const { model_name, scale, imageUrl, api_key } = req.body;
   const height = req.body.height || null;
   const width = req.body.width || null;
   let imagePath = req.file ? req.file.path : null;
@@ -58,8 +58,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     return res.status(400).send({ error: 'Either an image file or an image URL is required' });
   }
 
-  if (!model_name || !scale) {
-    return res.status(400).send({ error: 'model_name and scale are required' });
+  if (!api_key) {
+    return res.status(400).send({ error: 'API key is required' });
   }
 
   try {
@@ -67,6 +67,16 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     if (imageUrl) {
       imagePath = await downloadImage(imageUrl, requestId);
+    }
+
+    const { data: checkData, error: checkError } = await supabase
+      .rpc('check_api_key_and_quota', { api_key_param: api_key })
+      .single();
+
+    if (checkError) throw checkError;
+
+    if (!checkData.success) {
+      return res.status(403).send({ error: checkData.message });
     }
 
     const { data, error } = await supabase
@@ -78,20 +88,23 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         width,
         scale,
         current_status: 0,
-        image_path: imagePath
+        image_path: imagePath,
+        api: api_key
       }]);
 
     if (error) throw error;
 
     upscaleImage(imagePath, requestId, model_name, height, width, res);
-    subscribeToProgressUpdates(requestId, model_name, height, width, scale);
+    subscribeToProgressUpdates(requestId, api_key);
     extractPNGMetadata(imagePath, requestId);
+
     res.status(200).send({ requestId });
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 });
+
 
 app.get('/upscaled/:requestId', async (req, res) => {
   const { requestId } = req.params;
