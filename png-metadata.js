@@ -1,6 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
+const sharp = require('sharp');
 const { PNG } = require('pngjs');
+const sizeOf = require('image-size');
 
 const supabaseUrl = 'https://hsnaumiotmaozcqyeggc.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbmF1bWlvdG1hb3pjcXllZ2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNzU3OTc4MywiZXhwIjoyMDMzMTU1NzgzfQ.jrh-z6xSiVELtJKGZH2WhEoAhPpzYvBhmnmfcNllSNY';
@@ -8,21 +10,24 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function extractPNGMetadata(filePath, requestId) {
     try {
+        const metadata = await sharp(filePath).metadata();
+        const imageSize = sizeOf(filePath);
         const data = fs.readFileSync(filePath);
         const png = PNG.sync.read(data);
         const creation = fs.statSync(filePath).birthtime;
         const width = png.width;
         const height = png.height;
-        const color = png.bitDepth;
-       
+        const bitDepth = imageSize.depth ? imageSize.depth : 0; // Use depth from image-size for bit depth
+        const dpi = metadata.density ? metadata.density : 0; // Handle cases where DPI is not available
 
         const { data: insertData, error } = await supabase.from('png_metadata').insert([
             {
                 request_id: requestId,
                 width: width,
                 height: height,
-                bit_depth: color,
-                created_at: creation
+                bit_depth: bitDepth,
+                created_at: creation,
+                dpi: dpi
             }
         ]);
 
