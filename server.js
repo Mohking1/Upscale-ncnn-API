@@ -74,7 +74,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
       .single();
 
     if (checkError) throw checkError;
-
+    
     if (!checkData.success) {
       return res.status(403).send({ error: checkData.message });
     }

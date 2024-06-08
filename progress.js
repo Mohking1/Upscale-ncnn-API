@@ -16,7 +16,7 @@ const subscribeToProgressUpdates = (requestId, api_key) => {
       } else if (updatedRow.request_id === requestId && updatedRow.current_status === 2) {
         console.log(`Request ${requestId} is complete. Unsubscribing...`);
         const { data, error } = await supabase
-        .rpc('update_daily_quota', { api_key_param: api_key })
+        .rpc('update_api_quotas', { api_key_param: api_key })
         .single();
         supabase.removeChannel(channel);
       }
