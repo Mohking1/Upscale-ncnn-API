@@ -66,16 +66,16 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   const { model_name, scale, imageUrl, api_key } = req.body;
   let imagePath = req.file ? req.file.path : null;
 
+  if (req.fileValidationError) {
+    return res.status(400).send({ error: req.fileValidationError });
+  }
+
   if ((imagePath && imageUrl) || (!imagePath && !imageUrl)) {
     return res.status(400).send({ error: 'Either an image file or an image URL is required, but not both' });
   }
 
   if (!api_key) {
     return res.status(400).send({ error: 'API key is required' });
-  }
-
-  if (req.fileValidationError) {
-    return res.status(400).send({ error: req.fileValidationError });
   }
 
   try {
