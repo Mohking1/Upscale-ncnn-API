@@ -131,3 +131,5 @@ dist
 
 uploads/
 upscaled/
+.gitattributes
+package-lock.json
