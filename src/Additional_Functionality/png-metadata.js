@@ -17,8 +17,8 @@ async function extractPNGMetadata(filePath, requestId) {
         const creation = fs.statSync(filePath).birthtime;
         const width = png.width;
         const height = png.height;
-        const bitDepth = imageSize.depth ? imageSize.depth : 0; // Use depth from image-size for bit depth
-        const dpi = metadata.density ? metadata.density : 0; // Handle cases where DPI is not available
+        const bitDepth = imageSize.depth ? imageSize.depth : 0; 
+        const dpi = metadata.density ? metadata.density : 0; 
 
         const { data: insertData, error } = await supabase.from('png_metadata').insert([
             {

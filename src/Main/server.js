@@ -1,12 +1,12 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
-const { subscribeToProgressUpdates } = require('./progress');
+const { subscribeToProgressUpdates } = require('../Progress_update/progress');
 const { upscaleImage } = require('./upscale');
-const { sendImage } = require('./sendImages');
+const { sendImage } = require('../Additional_Functionality/sendImages');
 const multer = require('multer');
 const path = require('path');
-const { extractPNGMetadata } = require('./png-metadata');
+const { extractPNGMetadata } = require('../Additional_Functionality/png-metadata');
 const fs = require('fs');
 const axios = require('axios');
 
@@ -50,8 +50,6 @@ const downloadImage = async (imageUrl, requestId) => {
 
 app.post('/upload', upload.single('image'), async (req, res) => {
   const { model_name, scale, imageUrl, api_key } = req.body;
-  const height = req.body.height || null;
-  const width = req.body.width || null;
   let imagePath = req.file ? req.file.path : null;
 
   if (!imagePath && !imageUrl) {
@@ -67,7 +65,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     if (imageUrl) {
       imagePath = await downloadImage(imageUrl, requestId);
-    }
+    } 
 
     const { data: checkData, error: checkError } = await supabase
       .rpc('check_api_key_and_quota', { api_key_param: api_key })
@@ -84,8 +82,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
       .insert([{
         request_id: requestId,
         model_name,
-        height,
-        width,
         scale,
         current_status: 0,
         image_path: imagePath,
@@ -94,7 +90,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     if (error) throw error;
 
-    upscaleImage(imagePath, requestId, model_name, height, width, res);
+    upscaleImage(imagePath, requestId, model_name,scale, res);
     subscribeToProgressUpdates(requestId, api_key);
     extractPNGMetadata(imagePath, requestId);
 

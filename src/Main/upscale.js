@@ -1,5 +1,5 @@
 const { exec } = require('child_process');
-const { updateStatus } = require('./updateStatus');
+const { updateStatus } = require('../Progress_update/updateStatus');
 const { createClient } = require('@supabase/supabase-js');
 
 
@@ -14,9 +14,9 @@ const parseProgress = (data) => {
   }
   return 0;
 };
-const upscaleImage = async (imagePath, requestId, model_name, height, width) => {
+const upscaleImage = async (imagePath, requestId, model_name, scale) => {
   const upscaledImagePath = `upscaled/${requestId}.png`;
-  const command = `"D:\\Projects\\Internship\\Upscaly ncnn\\upscayl-ncnn\\build\\Release\\upscayl-bin.exe" -i "D:/Projects/Internship/Real-Esgran _API/"${imagePath} -o "D:/Projects/Internship/Real-Esgran _API/"${upscaledImagePath} -m "D:/Projects/Internship/Upscaly ncnn/upscayl-ncnn/build/Release/models" -n ${model_name} -c 0`;
+  const command = `"D:\\Projects\\Internship\\Upscaly ncnn\\upscayl-ncnn\\build\\Release\\upscayl-bin.exe" -i "D:/Projects/Internship/Real-Esgran _API/"${imagePath} -o "D:/Projects/Internship/Real-Esgran _API/"${upscaledImagePath} -m "D:/Projects/Internship/Upscaly ncnn/upscayl-ncnn/build/Release/models" -n ${model_name} -c 0 -s ${scale}`;   
   let retries = 0;
 
   const executeCommand = () => {
