@@ -11,10 +11,9 @@ const fs = require('fs');
 const axios = require('axios');
 require('dotenv').config();
 
-
 const app = express();
-supabaseUrl = process.env.supabaseUrl;
-supabaseKey = process.env.supabaseKey;
+const supabaseUrl = process.env.supabaseUrl;
+const supabaseKey = process.env.supabaseKey;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(express.json());
@@ -31,8 +30,9 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (!file.originalname.match(/\.(png)$/)) {
-    return cb(new Error('Only PNG files are allowed'), false);
+  if (!file.originalname.match(/\.(png|jpe?g|webp)$/i)) {
+    req.fileValidationError = 'Only PNG, JPG, JPEG, and WEBP files are allowed';
+    return cb(null, false);
   }
   cb(null, true);
 };
@@ -41,11 +41,11 @@ const upload = multer({ storage, fileFilter });
 
 const downloadImage = async (imageUrl, requestId) => {
   const fileExtension = path.extname(imageUrl).toLowerCase();
-  if (fileExtension !== '.png') {
-    throw new Error('Only PNG files are allowed');
+  if (!['.png', '.jpg', '.jpeg', '.webp'].includes(fileExtension)) {
+    return false;
   }
 
-  const imagePath = path.join('uploads', `${requestId}.png`);
+  const imagePath = path.join('uploads', `${requestId}${fileExtension}`);
   const writer = fs.createWriteStream(imagePath);
 
   const response = await axios({
@@ -66,12 +66,16 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   const { model_name, scale, imageUrl, api_key } = req.body;
   let imagePath = req.file ? req.file.path : null;
 
-  if (!imagePath && !imageUrl) {
-    return res.status(400).send({ error: 'Either an image file or an image URL is required' });
+  if ((imagePath && imageUrl) || (!imagePath && !imageUrl)) {
+    return res.status(400).send({ error: 'Either an image file or an image URL is required, but not both' });
   }
 
   if (!api_key) {
     return res.status(400).send({ error: 'API key is required' });
+  }
+
+  if (req.fileValidationError) {
+    return res.status(400).send({ error: req.fileValidationError });
   }
 
   try {
@@ -79,6 +83,9 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     if (imageUrl) {
       imagePath = await downloadImage(imageUrl, requestId);
+      if (!imagePath) {
+        return res.status(400).send({ error: 'Only PNG, JPG, JPEG, and WEBP files are allowed' });
+      }
     } 
 
     const { data: checkData, error: checkError } = await supabase
@@ -104,7 +111,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     if (error) throw error;
 
-    upscaleImage(imagePath, requestId, model_name,scale, res);
+    upscaleImage(imagePath, requestId, model_name, scale, res);
     subscribeToProgressUpdates(requestId, api_key);
     extractPNGMetadata(imagePath, requestId);
 
@@ -114,7 +121,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     res.status(500).send({ error: 'Internal Server Error' });
   }
 });
-
 
 app.get('/upscaled/:requestId', async (req, res) => {
   const { requestId } = req.params;
