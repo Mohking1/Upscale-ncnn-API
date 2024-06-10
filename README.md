@@ -58,7 +58,7 @@ You can vist https://github.com/upscayl/upscayl-ncnn and follow instruction to i
 ### 1. Clone
 Git clone the repo ```git clone https://github.com/Mohking1/Upscale-ncnn-API.git```
 ### 2. Replacing Placeholder
-Replace all the supabase key and url with your as well as in ```upscale.js``` replace the all the placeholder for full path of the respective folder.
+Replace all the supabase key and url with your as well as in ```upscale.js``` replace the all the placeholder in the command for full path of the respective folder.
 ### 3. Initialize the project
 ```npm init```
 ### 4. Install dependencies
