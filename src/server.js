@@ -39,38 +39,59 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-const downloadImage = async (imageUrl, requestId) => {
-  const fileExtension = path.extname(imageUrl).toLowerCase();
-  if (!['.png', '.jpg', '.jpeg', '.webp'].includes(fileExtension)) {
-    return false;
+const downloadImage = async (image, requestId) => {
+  let imagePath;
+  if (isURL(image)) {
+    const imageUrl = new URL(image);
+    const fileExtension = path.extname(imageUrl.pathname).toLowerCase();
+    if (!['.png', '.jpg', '.jpeg', '.webp'].includes(fileExtension)) {
+      return false;
+    }
+
+    imagePath = path.join('uploads', `${requestId}${fileExtension}`);
+    const writer = fs.createWriteStream(imagePath);
+
+    const response = await axios({
+      url: imageUrl.href,
+      method: 'GET',
+      responseType: 'stream'
+    });
+
+    response.data.pipe(writer);
+
+    return new Promise((resolve, reject) => {
+      writer.on('finish', () => resolve(imagePath));
+      writer.on('error', err => reject(err));
+    });
+  } else {
+    const fileExtension = path.extname(image).toLowerCase();
+    if (!['.png', '.jpg', '.jpeg', '.webp'].includes(fileExtension)) {
+      return false;
+    }
+    imagePath = path.join('uploads', `${requestId}${fileExtension}`);
+    fs.copyFileSync(image, imagePath);
+    return imagePath;
   }
-
-  const imagePath = path.join('uploads', `${requestId}${fileExtension}`);
-  const writer = fs.createWriteStream(imagePath);
-
-  const response = await axios({
-    url: imageUrl,
-    method: 'GET',
-    responseType: 'stream'
-  });
-
-  response.data.pipe(writer);
-
-  return new Promise((resolve, reject) => {
-    writer.on('finish', () => resolve(imagePath));
-    writer.on('error', err => reject(err));
-  });
 };
 
+function isURL(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 app.post('/upload', upload.single('image'), async (req, res) => {
-  const { model_name, scale, imageUrl, api_key } = req.body;
+  const { model_name, scale, image, api_key } = req.body;
   let imagePath = req.file ? req.file.path : null;
 
   if (req.fileValidationError) {
     return res.status(400).send({ error: req.fileValidationError });
   }
 
-  if ((imagePath && imageUrl) || (!imagePath && !imageUrl)) {
+  if ((imagePath && image) || (!imagePath && !image)) {
     return res.status(400).send({ error: 'Either an image file or an image URL is required, but not both' });
   }
 
@@ -79,21 +100,21 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 
   try {
-    const requestId = imageUrl ? uuidv4() : path.basename(req.file.path, path.extname(req.file.path));
+    const requestId = isURL(image) ? uuidv4() : path.basename(req.file.path, path.extname(req.file.path));
 
-    if (imageUrl) {
-      imagePath = await downloadImage(imageUrl, requestId);
+    if (isURL(image)) {
+      imagePath = await downloadImage(image, requestId);
       if (!imagePath) {
         return res.status(400).send({ error: 'Only PNG, JPG, JPEG, and WEBP files are allowed' });
       }
-    } 
+    }
 
     const { data: checkData, error: checkError } = await supabase
       .rpc('check_api_key_and_quota', { api_key_param: api_key })
       .single();
 
     if (checkError) throw checkError;
-    
+
     if (!checkData.success) {
       return res.status(403).send({ error: checkData.message });
     }
