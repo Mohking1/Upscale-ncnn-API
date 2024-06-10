@@ -5,6 +5,10 @@ const { PNG } = require('pngjs');
 const sizeOf = require('image-size');
 require('dotenv').config();
 
+const supabaseUrl = process.env.supabaseUrl;
+const supabaseKey = process.env.supabaseKey;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 async function extractPNGMetadata(filePath, requestId) {
     try {
         const metadata = await sharp(filePath).metadata();
@@ -25,7 +29,7 @@ async function extractPNGMetadata(filePath, requestId) {
             dpi = 0;
         }
 
-        const { data: insertData, error } = await supabase.from('image_metadata').insert([
+        const { data: insertData, error } = await supabase.from('png_metadata').insert([
             {
                 request_id: requestId,
                 width: width,
