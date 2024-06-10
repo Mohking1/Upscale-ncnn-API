@@ -1,19 +1,20 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
-const { subscribeToProgressUpdates } = require('../Progress_update/progress');
+const { subscribeToProgressUpdates } = require('./Progress_update/progress');
 const { upscaleImage } = require('./upscale');
-const { sendImage } = require('../Additional_Functionality/sendImages');
+const { sendImage } = require('./sendImages');
 const multer = require('multer');
 const path = require('path');
-const { extractPNGMetadata } = require('../Additional_Functionality/png-metadata');
+const { extractPNGMetadata } = require('./utils/png-metadata');
 const fs = require('fs');
 const axios = require('axios');
+require('dotenv').config();
+
 
 const app = express();
-
-const supabaseUrl = 'https://hsnaumiotmaozcqyeggc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbmF1bWlvdG1hb3pjcXllZ2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNzU3OTc4MywiZXhwIjoyMDMzMTU1NzgzfQ.jrh-z6xSiVELtJKGZH2WhEoAhPpzYvBhmnmfcNllSNY';
+supabaseUrl = process.env.supabaseUrl;
+supabaseKey = process.env.supabaseKey;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(express.json());
@@ -28,9 +29,22 @@ const storage = multer.diskStorage({
     cb(null, `${requestId}${path.extname(file.originalname)}`);
   }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+  if (!file.originalname.match(/\.(png)$/)) {
+    return cb(new Error('Only PNG files are allowed'), false);
+  }
+  cb(null, true);
+};
+
+const upload = multer({ storage, fileFilter });
 
 const downloadImage = async (imageUrl, requestId) => {
+  const fileExtension = path.extname(imageUrl).toLowerCase();
+  if (fileExtension !== '.png') {
+    throw new Error('Only PNG files are allowed');
+  }
+
   const imagePath = path.join('uploads', `${requestId}.png`);
   const writer = fs.createWriteStream(imagePath);
 

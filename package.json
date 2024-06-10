@@ -3,6 +3,7 @@
     "@supabase/realtime-js": "^2.9.5",
     "@supabase/supabase-js": "^2.43.4",
     "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "image-size": "^1.1.1",
     "multer": "^1.4.5-lts.1",
