@@ -60,8 +60,8 @@ Git clone the repo ```git clone https://github.com/Mohking1/Upscale-ncnn-API.git
 ### 2. Create .env File
 Create a .env file then paste below code.
 ```
-supabaseUrl = '<Your_supabase_url>';
-supabaseKey = '<Your_supabse_key>';
+supabaseUrl = <Your_supabase_url>
+supabaseKey = <Your_supabse_key>
 upscayl-bin_location = "<location_of_upscayl_bin>"
 upscayl-input_location = "<location_of_input_for_upscayl>"
 upscayl-output_location = "<location_of_output_for_upscayl>"
