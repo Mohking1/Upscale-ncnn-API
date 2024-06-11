@@ -4,6 +4,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
+    "exif-parser": "^0.1.12",
     "express": "^4.19.2",
     "image-size": "^1.1.1",
     "jpeg-js": "^0.4.4",

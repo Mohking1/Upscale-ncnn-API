@@ -3,6 +3,7 @@ const fs = require('fs');
 const sharp = require('sharp');
 const { PNG } = require('pngjs');
 const sizeOf = require('image-size');
+const ExifParser = require('exif-parser');
 require('dotenv').config();
 
 const supabaseUrl = process.env.supabaseUrl;
@@ -16,6 +17,7 @@ async function extractPNGMetadata(filePath, requestId) {
         const creation = fs.statSync(filePath).birthtime;
 
         let width, height, bitDepth, dpi;
+
         if (metadata.format === 'png') {
             const png = PNG.sync.read(fs.readFileSync(filePath));
             width = png.width;
@@ -25,8 +27,12 @@ async function extractPNGMetadata(filePath, requestId) {
         } else {
             width = metadata.width || 0;
             height = metadata.height || 0;
-            bitDepth = 0;
-            dpi = 0;
+
+            const parser = ExifParser.create(fs.readFileSync(filePath));
+            const exifData = parser.parse();
+
+            bitDepth = exifData.BitsPerSample ? exifData.BitsPerSample[0] : 0;
+            dpi = exifData.PixelXDimension + exifData.PixelYDimension || 0;
         }
 
         const { data: insertData, error } = await supabase.from('png_metadata').insert([
@@ -48,7 +54,6 @@ async function extractPNGMetadata(filePath, requestId) {
 
         console.log('Metadata inserted successfully:', insertData);
         return { success: true, data: insertData };
-
     } catch (error) {
         console.error('Error extracting image metadata:', error);
         return { success: false, error };
